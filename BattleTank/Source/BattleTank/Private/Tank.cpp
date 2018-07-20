@@ -3,6 +3,7 @@
 #include "Tank.h"
 #include "Components/StaticMeshComponent.h"
 #include "TankAimingComponent.h"
+#include "TankMovementComponent.h"
 #include "TankBarrel.h"
 #include "Projectile.h"
 #include "Turret.h"
@@ -14,6 +15,8 @@ ATank::ATank()
 	PrimaryActorTick.bCanEverTick = false;
     
     TankAimingComponent = CreateDefaultSubobject<UTankAimingComponent>(FName("Aiming Component"));
+    
+    TankMovementComponent = CreateDefaultSubobject<UTankMovementComponent>(FName("Movement Component"));
 
 }
 
@@ -30,9 +33,13 @@ void ATank::SetTurretReference(UTurret* TurretToSet)
 
 void ATank::Fire()
 {
-    UE_LOG(LogTemp, Warning, TEXT("Fire() Called!"));
+    if (!ProjectileBlueprint)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No Projectile Blueprint Found!"));
+        return;
+    }
     
-    bool bIsReloaded = (FPlatformTime::Seconds() - LastFireTime) > ReloadTimeInSeconds;
+    bool bIsReloaded = (GetWorld()->GetTimeSeconds() - LastFireTime) > ReloadTimeInSeconds;
     
     if (Barrel && bIsReloaded)
     {
@@ -47,7 +54,7 @@ void ATank::Fire()
             );
         
         Projectile->LaunchProjectile(LaunchSpeed);
-        LastFireTime = FPlatformTime::Seconds();
+        LastFireTime = GetWorld()->GetTimeSeconds();
     }
     
    

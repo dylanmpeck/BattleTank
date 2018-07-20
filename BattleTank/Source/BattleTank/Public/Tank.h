@@ -9,6 +9,7 @@
 class UTankBarrel;
 class UTurret;
 class UTankAimingComponent;
+class UTankMovementComponent;
 class AProjectile;
 
 UCLASS()
@@ -25,6 +26,9 @@ protected:
 	virtual void BeginPlay() override;
     
     UTankAimingComponent* TankAimingComponent = nullptr;
+    
+    UPROPERTY(BlueprintReadOnly, Category = Setup)
+    UTankMovementComponent* TankMovementComponent = nullptr;
 
 public:
 	// Called to bind functionality to input
@@ -42,16 +46,17 @@ public:
     void Fire();
     
 private:
-    UPROPERTY(EditAnywhere, Category = Firing)
+    UPROPERTY(EditDefaultsOnly, Category = Firing)
     float LaunchSpeed = 4000; 
     
-    UPROPERTY(EditAnywhere, Category = Setup)
+    UPROPERTY(EditDefaultsOnly, Category = Setup)
     TSubclassOf<AProjectile> ProjectileBlueprint;
+    
+    UPROPERTY(EditDefaultsOnly, Category = Setup)
+    float ReloadTimeInSeconds = 3;
 	
     // Local Barrel reference for spawning projectile
     UTankBarrel* Barrel = nullptr;
     
-    float ReloadTimeInSeconds = 3;
-    
-    double LastFireTime = 0;
+    float LastFireTime = 0;
 };
