@@ -3,6 +3,7 @@
 #include "TankAimingComponent.h"
 #include "TankBarrel.h"
 #include "Kismet/GameplayStatics.h"
+#include "Projectile.h"
 #include "Turret.h"
 
 // Sets default values for this component's properties
@@ -15,25 +16,50 @@ UTankAimingComponent::UTankAimingComponent()
 	// ...
 }
 
-void UTankAimingComponent::SetBarrelReference(UTankBarrel* BarrelToSet)
+void UTankAimingComponent::BeginPlay()
 {
-    if (!BarrelToSet) { return; }
-    Barrel = BarrelToSet;
+    // so that first fire is after initial reload
+    LastFireTime = GetWorld()->GetTimeSeconds();
 }
 
-void UTankAimingComponent::SetTurretReference(UTurret* TurretToSet)
+void UTankAimingComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
-    if (!TurretToSet) { return; }
+    if ((GetWorld()->GetTimeSeconds() - LastFireTime) < ReloadTimeInSeconds)
+    {
+        FiringState = EFiringState::Reloading;
+    }
+    else if (BarrelIsMoving())
+    {
+        FiringState = EFiringState::Aiming;
+    }
+    else
+    {
+        FiringState = EFiringState::Locked;
+    }
+}
+
+bool UTankAimingComponent::BarrelIsMoving()
+{
+    if (!ensure(Barrel)) { return false; }
+    
+    FVector BarrelForwardVector = Barrel->GetForwardVector();
+    if (!(BarrelForwardVector.Equals(AimDirection, 0.01f)))
+    {
+        return true;
+    }
+    return false;
+}
+
+void UTankAimingComponent::Initialize(UTankBarrel* BarrelToSet, UTurret* TurretToSet)
+{
+    Barrel = BarrelToSet;
     Turret = TurretToSet;
 }
 
-void UTankAimingComponent::AimAt(FVector HitLocation, float LaunchSpeed)
+void UTankAimingComponent::AimAt(FVector HitLocation)
 {
-    if (Barrel)
+    if (ensure(Barrel))
     {
-        //auto OurTankName = GetOwner()->GetName();
-        //auto BarrelLocation = Barrel->GetComponentLocation().ToString();
-        if (!Barrel) { return; }
         FVector OutLaunchVelocity;
         FVector StartLocation = Barrel->GetSocketLocation(FName("Projectile"));
         
@@ -51,8 +77,8 @@ void UTankAimingComponent::AimAt(FVector HitLocation, float LaunchSpeed)
          );
         if (bHaveAimSolution)
         {
-            auto AimDirection = OutLaunchVelocity.GetSafeNormal();
-            MoveBarrelTowards(AimDirection);
+            AimDirection = OutLaunchVelocity.GetSafeNormal();
+            MoveBarrelTowards();
             
             auto Time = GetWorld()->GetTimeSeconds();
             //UE_LOG(LogTemp, Warning, TEXT("%f: Aim solution found"), Time);
@@ -65,14 +91,42 @@ void UTankAimingComponent::AimAt(FVector HitLocation, float LaunchSpeed)
     }
 }
 
-void UTankAimingComponent::MoveBarrelTowards(FVector AimDirection)
+void UTankAimingComponent::MoveBarrelTowards()
 {
+    if (!ensure(Barrel) || !ensure(Turret)) { return; }
+    
     auto BarrelRotator = Barrel->GetForwardVector().Rotation();
     auto AimAsRotator = AimDirection.Rotation();
     auto DeltaRotator = AimAsRotator - BarrelRotator;
     
     Barrel->Elevate(DeltaRotator.Pitch);
     Turret->Rotate(DeltaRotator.Yaw);
+}
+
+void UTankAimingComponent::Fire()
+{
+    if (!ProjectileBlueprint)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No Projectile Blueprint Found!"));
+        return;
+    }
+    
+    if (FiringState != EFiringState::Reloading)
+    {
+        if (!ensure(Barrel)) { return; }
+        if (!ensure(ProjectileBlueprint)) { return; }
+        // spawn a projectile at barrel location
+        FActorSpawnParameters SpawnInfo;
+        SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        auto Projectile = GetWorld()->SpawnActor<AProjectile>(
+            ProjectileBlueprint,
+            Barrel->GetSocketLocation(FName("Projectile")),
+            Barrel->GetSocketRotation(FName("Projectile")),
+            SpawnInfo
+            );
+        Projectile->LaunchProjectile(LaunchSpeed);
+        LastFireTime = GetWorld()->GetTimeSeconds();
+    }
 }
 
 

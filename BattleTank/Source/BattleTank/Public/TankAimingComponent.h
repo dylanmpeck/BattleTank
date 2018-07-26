@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright Dylan Peck.
 
 #pragma once
 
@@ -7,32 +7,64 @@
 #include "Components/ActorComponent.h"
 #include "TankAimingComponent.generated.h"
 
+// Enum for aiming state
+UENUM()
+enum class EFiringState : uint8
+{
+    Reloading,
+    Aiming,
+    Locked
+};
+
 //Forward Declaration
 class UTankBarrel;
 class UTurret;
+class AProjectile;
 
 //Holds barrel's properties and elevate method
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class BATTLETANK_API UTankAimingComponent : public UActorComponent
 {
 	GENERATED_BODY()
-
-public:	
-	// Sets default values for this component's properties
-	UTankAimingComponent();
-
+    
 public:
+    UFUNCTION(BlueprintCallable, Category = "Setup")
+    void Initialize(UTankBarrel* BarrelToSet, UTurret* TurretToSet);
     
-    void AimAt(FVector HitLocation, float LaunchSpeed);
+    void AimAt(FVector HitLocation);
     
-    void SetBarrelReference(UTankBarrel* BarrelToSet);
+    UFUNCTION(BlueprintCallable, Category = "Input")
+    void Fire();
     
-    void SetTurretReference(UTurret* BarrelToSet);
+    UTankBarrel* Barrel = nullptr;
+    UTurret* Turret = nullptr;
+    
+protected:
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    EFiringState FiringState = EFiringState::Reloading;
+    
+    virtual void BeginPlay() override;
+    
+    bool BarrelIsMoving();
     
 private:
-    UTankBarrel* Barrel = nullptr;
+    // Sets default values for this component's properties
+    UTankAimingComponent();
     
-    UTurret* Turret = nullptr;
+    virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+    
+    UPROPERTY(EditDefaultsOnly, Category = "Setup")
+    TSubclassOf<AProjectile> ProjectileBlueprint;
+    
+    UPROPERTY(EditDefaultsOnly, Category = "Setup")
+    float ReloadTimeInSeconds = 3;
+    
+    float LastFireTime = 0;
+    
+    UPROPERTY(EditDefaultsOnly, Category = "Firing")
+    float LaunchSpeed = 4000; 
 
-    void MoveBarrelTowards(FVector AimDirection);
+    void MoveBarrelTowards();
+    
+    FVector AimDirection;
 };
