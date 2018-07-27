@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Projectile.h"
-#include "ProjectileMovement.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 
 
@@ -11,7 +10,7 @@ AProjectile::AProjectile()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
     
-    ProjectileMovement = CreateDefaultSubobject<UProjectileMovement>(FName("Projectile Movement Component"));
+    ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(FName("Projectile Movement Component"));
     ProjectileMovement->bAutoActivate = false;
 }
 
