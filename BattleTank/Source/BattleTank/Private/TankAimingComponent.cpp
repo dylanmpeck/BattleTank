@@ -18,13 +18,20 @@ UTankAimingComponent::UTankAimingComponent()
 
 void UTankAimingComponent::BeginPlay()
 {
+    Super::BeginPlay();
     // so that first fire is after initial reload
     LastFireTime = GetWorld()->GetTimeSeconds();
 }
 
 void UTankAimingComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
-    if ((GetWorld()->GetTimeSeconds() - LastFireTime) < ReloadTimeInSeconds)
+    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+    
+    if (RoundsLeft <= 0)
+    {
+        FiringState = EFiringState::OutOfAmmo;
+    }
+    else if ((GetWorld()->GetTimeSeconds() - LastFireTime) < ReloadTimeInSeconds)
     {
         FiringState = EFiringState::Reloading;
     }
@@ -36,6 +43,11 @@ void UTankAimingComponent::TickComponent(float DeltaTime, enum ELevelTick TickTy
     {
         FiringState = EFiringState::Locked;
     }
+}
+
+EFiringState UTankAimingComponent::GetFiringState() const
+{
+    return FiringState;
 }
 
 bool UTankAimingComponent::BarrelIsMoving()
@@ -100,7 +112,21 @@ void UTankAimingComponent::MoveBarrelTowards()
     auto DeltaRotator = AimAsRotator - BarrelRotator;
     
     Barrel->Elevate(DeltaRotator.Pitch);
-    Turret->Rotate(DeltaRotator.Yaw);
+    if (DeltaRotator.Yaw > 180.0f)
+    {
+        DeltaRotator.Yaw = DeltaRotator.Yaw - 180.0f;
+        Turret->Rotate(DeltaRotator.Yaw * -1);
+    }
+    else if (DeltaRotator.Yaw < -180.0f)
+    {
+        DeltaRotator.Yaw = DeltaRotator.Yaw + 180.0f;
+        Turret->Rotate(DeltaRotator.Yaw * -1);
+    }
+    else
+    {
+        Turret->Rotate(DeltaRotator.Yaw);
+    }
+
 }
 
 void UTankAimingComponent::Fire()
@@ -111,7 +137,7 @@ void UTankAimingComponent::Fire()
         return;
     }
     
-    if (FiringState != EFiringState::Reloading)
+    if (FiringState == EFiringState::Locked || FiringState == EFiringState::Aiming)
     {
         if (!ensure(Barrel)) { return; }
         if (!ensure(ProjectileBlueprint)) { return; }
@@ -126,7 +152,11 @@ void UTankAimingComponent::Fire()
             );
         Projectile->LaunchProjectile(LaunchSpeed);
         LastFireTime = GetWorld()->GetTimeSeconds();
+        RoundsLeft--;
     }
 }
 
-
+int UTankAimingComponent::GetRoundsLeft() const
+{
+    return RoundsLeft;
+}
