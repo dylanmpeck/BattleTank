@@ -37,7 +37,7 @@ public:
     EFiringState GetFiringState() const;
     
     UFUNCTION(BlueprintCallable, Category = "UI")
-    int GetRoundsLeft() const;
+    int32 GetRoundsLeft() const;
     
     UFUNCTION(BlueprintCallable, Category = "Input")
     void Fire();
@@ -70,7 +70,8 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "Firing")
     float LaunchSpeed = 4000;
     
-    int RoundsLeft = 3;
+    UPROPERTY(EditDefaultsOnly, Category = "Firing")
+    int32 RoundsLeft = 3;
 
     void MoveBarrelTowards();
     

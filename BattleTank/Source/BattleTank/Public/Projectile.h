@@ -7,6 +7,9 @@
 #include "Projectile.generated.h"
 
 class UProjectileMovementComponent;
+class UStaticMeshComponent;
+class UParticleSystemComponent;
+class URadialForceComponent;
 
 UCLASS()
 class BATTLETANK_API AProjectile : public AActor
@@ -22,13 +25,29 @@ protected:
 	virtual void BeginPlay() override;
     
     UProjectileMovementComponent* ProjectileMovement = nullptr;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
     
-    void LaunchProjectile(float Speed);
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    UStaticMeshComponent* CollisionMesh = nullptr;
+    
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    UParticleSystemComponent* LaunchBlast = nullptr;
+    
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    UParticleSystemComponent* ImpactBlast = nullptr;
+    
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    URadialForceComponent* ExplosionForce = nullptr;
+    
+    UPROPERTY(EditDefaultsOnly, Category = "Defaults")
+    float DestroyDelay = 10.f;
 
-	
-	
+public:
+    void LaunchProjectile(float Speed);
+    
+private:
+    UFUNCTION()
+    void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& hit);
+    
+    UFUNCTION()
+    void OnTimerExpire();
 };
