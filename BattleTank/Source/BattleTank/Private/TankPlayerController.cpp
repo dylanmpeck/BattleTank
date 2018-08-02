@@ -2,6 +2,7 @@
 
 #include "TankPlayerController.h"
 #include "Classes/Camera/PlayerCameraManager.h"
+#include "Tank.h"
 #include "Public/TankAimingComponent.h"
 #include "GameFramework/Actor.h"
 
@@ -20,6 +21,19 @@ void ATankPlayerController::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
     
     AimTowardsCrosshair();
+}
+
+void ATankPlayerController::SetPawn(APawn* InPawn)
+{
+    Super::SetPawn(InPawn);
+    
+    if (InPawn)
+    {
+        auto PossessedTank = Cast<ATank>(InPawn);
+        if (!ensure(PossessedTank)) { return; }
+        
+        PossessedTank->OnDeath.AddUniqueDynamic(this, &ATankPlayerController::OnTankDeath);
+    }
 }
 
 void ATankPlayerController::AimTowardsCrosshair()
@@ -68,7 +82,7 @@ bool ATankPlayerController::GetLookVectorHitLocation(FVector LookDirection, FVec
      Hit,
      Start,
      End,
-     ECollisionChannel::ECC_Visibility
+     ECollisionChannel::ECC_Camera
     ))
     {
         HitLocation = Hit.Location;
@@ -78,4 +92,9 @@ bool ATankPlayerController::GetLookVectorHitLocation(FVector LookDirection, FVec
     return false;
 }
 
+void ATankPlayerController::OnTankDeath()
+{
+    //UE_LOG(LogTemp, Warning, TEXT("Player Tank is Dead"));
+    StartSpectatingOnly();
+}
 

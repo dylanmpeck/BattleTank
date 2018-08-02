@@ -21,6 +21,10 @@ public:
 	
     void Tick(float DeltaTime) override;
     
+    UFUNCTION()
+    void OnTankDeath();
+    
+    virtual void SetPawn(APawn* InPawn) override;
 protected:
     UFUNCTION(BlueprintImplementableEvent, Category = "Setup")
     void FoundAimingComponent(UTankAimingComponent* AimingCompRef);

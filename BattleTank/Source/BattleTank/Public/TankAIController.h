@@ -22,6 +22,9 @@ public:
     void BeginPlay() override;
     
     virtual void Tick(float DeltaTime) override;
+    
+    UFUNCTION()
+    void OnTankDeath();
 protected:
     // how close can the AI tank get to the player
     UPROPERTY(EditDefaultsOnly, Category = "Setup")
@@ -29,5 +32,7 @@ protected:
     
 private:
     UTankAimingComponent* AimingComponent = nullptr;
+    
+    virtual void SetPawn(APawn* InPawn) override;
     
 };
